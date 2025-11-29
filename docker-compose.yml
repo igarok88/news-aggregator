@@ -1,0 +1,12 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Монтируем текущую папку внутрь контейнера,
+      # чтобы вы могли менять код в IDE и не пересобирать образ каждый раз
+      - .:/app
+    environment:
+      # Важно для Playwright внутри Docker
+      - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright

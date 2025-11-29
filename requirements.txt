@@ -1,0 +1,7 @@
+flask
+requests
+googlenewsdecoder
+trafilatura
+playwright
+google-genai
+beautifulsoup4
