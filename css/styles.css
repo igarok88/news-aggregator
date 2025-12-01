@@ -1,0 +1,185 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  background: #f4f4f9;
+  padding: 20px;
+  color: #333;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+h1 {
+  margin-top: 0;
+  color: #2c3e50;
+  text-align: center;
+}
+
+/* Стили для формы настроек */
+.filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.filter-group {
+  flex: 1;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+select,
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.search-btn {
+  width: 100%;
+  padding: 12px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+.search-btn:hover {
+  background: #2980b9;
+}
+
+.loader {
+  display: none;
+  margin-top: 20px;
+  text-align: center;
+  color: #7f8c8d;
+}
+
+.result-box {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  line-height: 1.6;
+}
+
+.error {
+  background: #fee;
+  color: #c0392b;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 20px;
+}
+
+/* Шестеренка */
+.settings-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+  z-index: 100;
+  color: #2c3e50;
+}
+
+.settings-btn:hover {
+  opacity: 1;
+  transition: 0.5s;
+}
+
+/* Модальное окно (фон) */
+.modal-overlay {
+  display: none;
+  /* Скрыто по умолчанию */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Само окно */
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+
+.api-input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 2px solid #eee;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.save-key-btn {
+  background: #27ae60;
+  color: white;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.help-text {
+  font-size: 13px;
+  color: #666;
+  margin-top: 10px;
+  line-height: 1.5;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.help-text a {
+  color: #3498db;
+  text-decoration: none;
+}

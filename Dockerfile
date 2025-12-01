@@ -18,8 +18,10 @@ RUN apt-get install -y --no-install-recommends \
     php-curl \
     php-json \
     php-mbstring \
+    php-xml \
     unzip \
     && rm -rf /var/lib/apt/lists/*
+    
 
 # Шаг 3: Python зависимости
 COPY requirements.txt .
@@ -29,4 +31,4 @@ RUN pip install --no-cache-dir -r requirements.txt --break-system-packages
 COPY . .
 
 EXPOSE 8000
-CMD ["php", "-S", "0.0.0.0:8000", "index.php"]
+CMD ["php", "-S", "0.0.0.0:8000"]
