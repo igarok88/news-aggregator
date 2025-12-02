@@ -3,7 +3,7 @@
 /**
  * Функция-агент: Переводит поисковый запрос на язык целевой страны
  */
-function translateQuery($text, $targetLangCode, $apiKey)
+function translateQuery($text, $targetLangCode, $countryName, $apiKey)
 {
 
     $safeText = str_replace('"', "'", $text); // Заменяем двойные кавычки на одинарные
@@ -14,29 +14,36 @@ function translateQuery($text, $targetLangCode, $apiKey)
     }
 
     $prompt = <<<EOT
-    You are an expert news editor and linguist. Your task is to translate a short search query from Russian into the target language specifically for a Google News search.
+    You are an expert international news editor and localization specialist. 
+    Your task is to adapt a short search query (provided in ANY source language) into the specific local language and script used in {$countryName} for a Google News search.
 
-    Target Language Code: {$targetLangCode}
-    Query: "{$safeText}"
+    Context:
+    - Target Country: {$countryName}
+    - Target Language Code: {$targetLangCode}
+    - Original Query: "{$safeText}"
 
-    CRITICAL RULES:
-    1.  **Proper Names & Surnames**: Do NOT translate them literally. Use the standard spelling used by major media outlets in the target country.
-    2.  **Transliteration Nuances**:
-        - If Target is German (de): Use "J" for "Y" sound (e.g., "Yermak" -> "Jermak", "Zelensky" -> "Selenskyj").
-        - If Target is English (en): Use standard English transliteration.
-        - If Target is French (fr): Use French phonetic spelling (e.g., "Putin" -> "Poutine").
-    3.  **Context**: If the query is a famous political figure (like "Ермак"), use their most common spelling in that country (e.g., "Andrij Jermak").
-    4.  **Output**: Output ONLY the translated search phrase. No explanations.
+    CRITICAL INSTRUCTIONS:
 
-    Example for German (de):
-    Input: "Ермак" -> Output: "Andrij Jermak"
-    Input: "Зеленский" -> Output: "Wolodymyr Selenskyj"
-    Input: "Танки" -> Output: "Panzer"
+    1.  **Detect & Adapt:**
+        - Automatically detect the source language of the "Original Query".
+        - Translate the *intent* and *keywords* into the target language defined by {$targetLangCode}.
 
-    Example for English (en):
-    Input: "Ермак" -> Output: "Andriy Yermak"
+    2.  **Entity Recognition (Crucial):**
+        - If the query contains Proper Names (Politicians, Cities, Companies), do NOT just transliterate. Identify the entity and use the **standard spelling used by major local media** in {$countryName}.
+        - *Example (Target: Germany):* Input "Beijing" (En) -> Output "Peking". Input "Зеленский" (Ru) -> Output "Selenskyj".
 
-    Your translation:
+    3.  **Script & Alphabet:**
+        - **China (CN), Japan (JP), Korea (KR):** MUST use native script (Hanzi, Kanji, Hangul). No Latin characters unless it's a specific brand name.
+        - **Arab Countries (EG, SA, AE) & Israel (IL):** MUST use Arabic/Hebrew script.
+        - **Ukraine (UA):** Use Ukrainian spelling (e.g., "Єрмак" instead of "Yermak").
+        - **Europe/Americas:** Use the standard Latin alphabet with local diacritics (e.g., "München", "François").
+
+    4.  **Formatting:**
+        - If the query is a common noun (e.g., "Elections", "War", "Inflation"), translate it to the local equivalent (e.g., "Wahlen", "Krieg", "Inflation").
+        - If the query is a person, ensure the First Name is included if it helps ambiguity (e.g., "Donald Trump" instead of just "Trump").
+
+    Output Format:
+    Output ONLY the final translated/localized search string. No explanations. No quotes.
     EOT;
 
     $apiData = [

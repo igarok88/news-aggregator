@@ -1,3 +1,4 @@
+/* === Основные настройки === */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
@@ -7,7 +8,7 @@ body {
 }
 
 .container {
-  max-width: 800px;
+  max-width: 800px; /* Оптимальная ширина для чтения */
   margin: 0 auto;
   background: white;
   padding: 30px;
@@ -20,9 +21,18 @@ h1 {
   margin-top: 0;
   color: #2c3e50;
   text-align: center;
+
+  /* Добавляем эти строки: */
+  cursor: pointer; /* Курсор в виде руки */
+  user-select: none; /* Чтобы текст не выделялся при кликах */
+  transition: opacity 0.3s; /* Плавная анимация */
 }
 
-/* Стили для формы настроек */
+h1:hover {
+  opacity: 0.7; /* Легкая прозрачность при наведении */
+}
+
+/* === Форма и Фильтры === */
 .filters {
   display: flex;
   gap: 10px;
@@ -30,10 +40,12 @@ h1 {
   background: #f8f9fa;
   padding: 15px;
   border-radius: 8px;
+  flex-wrap: wrap; /* Чтобы на мобильных не ломалось */
 }
 
 .filter-group {
   flex: 1;
+  min-width: 150px;
 }
 
 .filter-group label {
@@ -45,7 +57,8 @@ h1 {
 }
 
 select,
-input[type="text"] {
+input[type="text"],
+input[type="password"] {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;
@@ -65,24 +78,104 @@ input[type="text"] {
   cursor: pointer;
   font-weight: bold;
   margin-top: 10px;
+  transition: background 0.3s;
 }
 
 .search-btn:hover {
   background: #2980b9;
 }
 
-.loader {
-  display: none;
-  margin-top: 20px;
-  text-align: center;
-  color: #7f8c8d;
+.search-btn:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
 }
 
+/* === Лог операций (Консоль) === */
+#logWrapper {
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  border-radius: 8px;
+  overflow: hidden;
+  display: none; /* Скрыто по умолчанию */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.log-header {
+  background: #2c3e50; /* Темный фон для шапки */
+  color: #fff;
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between; /* Исправлена опечатка */
+  align-items: center; /* Исправлена опечатка */
+  font-weight: bold;
+  user-select: none;
+}
+
+.log-header:hover {
+  background: #34495e;
+}
+
+#logContent {
+  /* Настройки для анимации */
+  height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background: #fff;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  border-top: 1px solid #ddd;
+
+  transition: all 0.3s ease; /* Плавное сворачивание */
+}
+
+/* Стили для ссылок внутри лога */
+.log-entry a,
+.log-line a {
+  display: inline-block; /* Делаем блочно-строчным, чтобы работала ширина */
+  max-width: 250px; /* Максимальная ширина ссылки (регулируй под себя) */
+
+  white-space: nowrap; /* Запрещаем перенос на новую строку */
+  overflow: hidden; /* Скрываем всё, что не влезает */
+  text-overflow: ellipsis; /* Добавляем троеточие (...) в конце */
+
+  vertical-align: bottom; /* Выравниваем по нижней границе текста */
+  color: #3498db; /* Цвет ссылки */
+  text-decoration: none; /* Убираем подчеркивание (по желанию) */
+  border-bottom: 1px dotted #3498db; /* Легкое пунктирное подчеркивание */
+}
+
+.log-entry a:hover,
+.log-line a:hover {
+  color: #2980b9;
+  border-bottom: 1px solid #2980b9;
+}
+
+/* Класс для свернутого состояния */
+#logContent.collapsed {
+  height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-top: none;
+}
+
+.log-entry {
+  margin-bottom: 4px;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 2px;
+}
+
+/* === Результат === */
 .result-box {
   margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
   line-height: 1.6;
+  animation: fadeIn 0.5s ease-in;
 }
 
 .error {
@@ -93,7 +186,7 @@ input[type="text"] {
   margin-top: 20px;
 }
 
-/* Шестеренка */
+/* === Настройки (Шестеренка и Модалка) === */
 .settings-btn {
   position: absolute;
   top: 20px;
@@ -103,20 +196,18 @@ input[type="text"] {
   font-size: 24px;
   cursor: pointer;
   opacity: 0.6;
-  transition: opacity 0.3s;
-  z-index: 100;
+  z-index: 10;
   color: #2c3e50;
+  transition: all 0.5s ease;
 }
 
 .settings-btn:hover {
   opacity: 1;
-  transition: 0.5s;
+  transform: rotate(90deg);
 }
 
-/* Модальное окно (фон) */
 .modal-overlay {
   display: none;
-  /* Скрыто по умолчанию */
   position: fixed;
   top: 0;
   left: 0;
@@ -128,13 +219,12 @@ input[type="text"] {
   align-items: center;
 }
 
-/* Само окно */
 .modal-content {
   background: white;
   padding: 30px;
   border-radius: 12px;
   width: 90%;
-  max-width: 500px;
+  max-width: 450px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   position: relative;
 }
@@ -148,13 +238,13 @@ input[type="text"] {
   color: #999;
 }
 
+.modal-close:hover {
+  color: #333;
+}
+
 .api-input {
-  width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border: 2px solid #eee;
-  border-radius: 6px;
   font-family: monospace;
+  letter-spacing: 1px;
 }
 
 .save-key-btn {
@@ -167,12 +257,17 @@ input[type="text"] {
   cursor: pointer;
   font-size: 16px;
   font-weight: bold;
+  margin-top: 10px;
+}
+
+.save-key-btn:hover {
+  background: #219150;
 }
 
 .help-text {
   font-size: 13px;
   color: #666;
-  margin-top: 10px;
+  margin-top: 15px;
   line-height: 1.5;
   background: #f8f9fa;
   padding: 10px;
@@ -182,4 +277,16 @@ input[type="text"] {
 .help-text a {
   color: #3498db;
   text-decoration: none;
+}
+
+/* Анимация появления */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
