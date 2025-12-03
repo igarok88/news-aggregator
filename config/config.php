@@ -1,5 +1,31 @@
 <?php
 
+// Load Composer dependencies
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// === API KEY CONFIGURATION ===
+// Attempt to load from .env file, fallback to hardcoded if missing
+if (class_exists('Dotenv\Dotenv')) {
+    try {
+        // Initialize Dotenv
+        $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+        // Load .env variables safely
+        $dotenv->safeLoad();
+    } catch (Exception $e) {
+        // Ignore if .env is missing
+    }
+}
+// PRIORITY LOGIC: 
+// 1. Key from Browser (Cookie) - Highest priority
+// 2. Key from .env file
+// 3. Placeholder (Fallback)
+$userKey = $_COOKIE['gemini_user_key'] ?? null;
+$envKey = $_ENV['GEMINI_API_KEY'] ?? null;
+
+// Determine final API key
+$GEMINI_API_KEY = $userKey ?: ($envKey ?: 'INSERT_YOUR_GEMINI_KEY_HERE');
+
+
 // Link count options
 $limitOptions = [
     5  => '5 articles (Fast)',

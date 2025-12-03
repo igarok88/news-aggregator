@@ -1,7 +1,5 @@
-flask
 requests
 googlenewsdecoder
 trafilatura
 playwright==1.44.0
-google-genai
 beautifulsoup4

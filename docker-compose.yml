@@ -1,12 +1,25 @@
+version: "3.8"
+
 services:
   app:
+    container_name: gain_app
     build: .
     ports:
       - "8000:8000"
+
     volumes:
-      # Монтируем текущую папку внутрь контейнера,
-      # чтобы вы могли менять код в IDE и не пересобирать образ каждый раз
+      # 1. Main code: Sync local files to the container for live development
       - .:/app
+
+      # 2. VENDOR PROTECTION (Critical!)
+      # This tells Docker: "Do not overwrite /app/vendor with local files;
+      # keep the version that was created inside the Dockerfile".
+      - /app/vendor
+
+    # 3. Load the .env file so the script can access your GEMINI_API_KEY
+    env_file:
+      - .env
+
     environment:
-      # Важно для Playwright внутри Docker
+      # Path to browsers in the official Playwright image
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright

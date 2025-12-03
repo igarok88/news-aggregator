@@ -1,6 +1,6 @@
 <?php
 
-// цикл для автоматического подключения
+// loop for automatic file connection
 
 $files = glob(__DIR__ . '/*.php');
 foreach ($files as $file) {

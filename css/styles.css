@@ -1,4 +1,3 @@
-/* === Основные настройки === */
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif;
@@ -8,7 +7,7 @@ body {
 }
 
 .container {
-  max-width: 800px; /* Оптимальная ширина для чтения */
+  max-width: 800px;
   margin: 0 auto;
   background: white;
   padding: 30px;
@@ -17,22 +16,59 @@ body {
   position: relative;
 }
 
-h1 {
-  margin-top: 0;
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f2f5;
+}
+
+.brand-block {
+  cursor: pointer;
+  user-select: none;
+}
+
+.company-name {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 900;
   color: #2c3e50;
-  text-align: center;
-
-  /* Добавляем эти строки: */
-  cursor: pointer; /* Курсор в виде руки */
-  user-select: none; /* Чтобы текст не выделялся при кликах */
-  transition: opacity 0.3s; /* Плавная анимация */
+  line-height: 1;
+  letter-spacing: -1px;
 }
 
-h1:hover {
-  opacity: 0.7; /* Легкая прозрачность при наведении */
+.company-name .highlight {
+  color: #3498db;
 }
 
-/* === Форма и Фильтры === */
+.company-tagline {
+  display: block;
+  font-size: 14px;
+  color: #95a5a6;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 5px;
+}
+
+.settings-btn-header {
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  color: #b0bccc;
+  transition: all 0.3s ease;
+  padding: 5px;
+  border-radius: 50%;
+}
+
+.settings-btn-header:hover {
+  color: #3498db;
+  opacity: 0.5;
+}
+
 .filters {
   display: flex;
   gap: 10px;
@@ -40,7 +76,7 @@ h1:hover {
   background: #f8f9fa;
   padding: 15px;
   border-radius: 8px;
-  flex-wrap: wrap; /* Чтобы на мобильных не ломалось */
+  flex-wrap: wrap;
 }
 
 .filter-group {
@@ -90,25 +126,24 @@ input[type="password"] {
   cursor: not-allowed;
 }
 
-/* === Лог операций (Консоль) === */
 #logWrapper {
   margin-top: 20px;
   border: 1px solid #ccc;
   background: #f9f9f9;
   border-radius: 8px;
   overflow: hidden;
-  display: none; /* Скрыто по умолчанию */
+  display: none;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .log-header {
-  background: #2c3e50; /* Темный фон для шапки */
+  background: #2c3e50;
   color: #fff;
   padding: 10px 15px;
   cursor: pointer;
   display: flex;
-  justify-content: space-between; /* Исправлена опечатка */
-  align-items: center; /* Исправлена опечатка */
+  justify-content: space-between;
+  align-items: center;
   font-weight: bold;
   user-select: none;
 }
@@ -118,7 +153,6 @@ input[type="password"] {
 }
 
 #logContent {
-  /* Настройки для анимации */
   height: 300px;
   overflow-y: auto;
   padding: 10px;
@@ -127,24 +161,20 @@ input[type="password"] {
   font-size: 13px;
   line-height: 1.5;
   border-top: 1px solid #ddd;
-
-  transition: all 0.3s ease; /* Плавное сворачивание */
+  transition: all 0.3s ease;
 }
 
-/* Стили для ссылок внутри лога */
 .log-entry a,
 .log-line a {
-  display: inline-block; /* Делаем блочно-строчным, чтобы работала ширина */
-  max-width: 250px; /* Максимальная ширина ссылки (регулируй под себя) */
-
-  white-space: nowrap; /* Запрещаем перенос на новую строку */
-  overflow: hidden; /* Скрываем всё, что не влезает */
-  text-overflow: ellipsis; /* Добавляем троеточие (...) в конце */
-
-  vertical-align: bottom; /* Выравниваем по нижней границе текста */
-  color: #3498db; /* Цвет ссылки */
-  text-decoration: none; /* Убираем подчеркивание (по желанию) */
-  border-bottom: 1px dotted #3498db; /* Легкое пунктирное подчеркивание */
+  display: inline-block;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  color: #3498db;
+  text-decoration: none;
+  border-bottom: 1px dotted #3498db;
 }
 
 .log-entry a:hover,
@@ -153,7 +183,6 @@ input[type="password"] {
   border-bottom: 1px solid #2980b9;
 }
 
-/* Класс для свернутого состояния */
 #logContent.collapsed {
   height: 0;
   padding-top: 0;
@@ -167,7 +196,6 @@ input[type="password"] {
   padding-bottom: 2px;
 }
 
-/* === Результат === */
 .result-box {
   margin-top: 30px;
   padding: 20px;
@@ -184,26 +212,6 @@ input[type="password"] {
   padding: 15px;
   border-radius: 6px;
   margin-top: 20px;
-}
-
-/* === Настройки (Шестеренка и Модалка) === */
-.settings-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  opacity: 0.6;
-  z-index: 10;
-  color: #2c3e50;
-  transition: all 0.5s ease;
-}
-
-.settings-btn:hover {
-  opacity: 1;
-  transform: rotate(90deg);
 }
 
 .modal-overlay {
@@ -279,7 +287,6 @@ input[type="password"] {
   text-decoration: none;
 }
 
-/* Анимация появления */
 @keyframes fadeIn {
   from {
     opacity: 0;

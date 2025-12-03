@@ -1,138 +1,103 @@
 <?php
-// === НАСТРОЙКА ЗАГОЛОВКОВ ДЛЯ SSE ===
+
+// === SSE HEADERS CONFIGURATION ===
+// Set content type for Server-Sent Events
 header('Content-Type: text/event-stream');
+// Disable caching to ensure real-time delivery
 header('Cache-Control: no-cache');
+// Keep the connection open
 header('Connection: keep-alive');
-header('X-Accel-Buffering: no'); // Для Nginx
+// Disable buffering for Nginx
+header('X-Accel-Buffering: no');
 
-
-// Отключаем буферизацию для Real-time логов
+// Disable buffering for Real-time logs
+// Check if running under Apache and disable gzip
 if (function_exists('apache_setenv')) {
     @apache_setenv('no-gzip', 1);
 }
+
+// Disable zlib output compression
 @ini_set('zlib.output_compression', 0);
+// Enable implicit flushing
 @ini_set('implicit_flush', 1);
+// Flush all existing output buffers
 for ($i = 0; $i < ob_get_level(); $i++) {
     ob_end_flush();
 }
+// turn on implicit flush
 ob_implicit_flush(1);
 
-// Убираем вывод ошибок в поток, чтобы не сломать JSON формат
+// Suppress error output to the stream to avoid breaking JSON format
+// We want to handle errors manually via the logger
 ini_set('display_errors', 0);
+// Report all errors internally
 error_reporting(E_ALL);
+// Set script execution time limit to 5 minutes
 set_time_limit(300);
 
-require_once __DIR__ . '/vendor/autoload.php';
+
+// Load custom functions
 require_once __DIR__ . '/functions/_loader.php';
-require_once __DIR__ . '/config/_loader.php';
+// Load configuration files
+require_once __DIR__ . '/config/config.php';
 
 
-// === КОНФИГУРАЦИЯ API КЛЮЧЕЙ ===
-// Пытаемся получить из .env, если нет — используем жестко заданный (резерв)
-if (class_exists('Dotenv\Dotenv')) {
-    try {
-        $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
-        $dotenv->safeLoad();
-    } catch (Exception $e) {
-        // Игнорируем, если .env нет
-    }
-}
-
-// ЛОГИКА ПРИОРИТЕТА: 
-// 1. Ключ из браузера (Cookie) - самый главный
-// 2. Ключ из файла .env
-// 3. Заглушка
-$userKey = $_COOKIE['gemini_user_key'] ?? null;
-$envKey = $_ENV['GEMINI_API_KEY'] ?? null;
-
-$GEMINI_API_KEY = $userKey ?: ($envKey ?: 'ВСТАВЬ_СЮДА_СВОЙ_КЛЮЧ_GEMINI');
-
-
-// === ФУНКЦИЯ ЛОГИРОВАНИЯ (Под формат SSE) ===
-function logger($msg, $type = 'info')
-{
-    $colors = ['info' => '#333', 'success' => 'green', 'error' => 'red', 'system' => '#007bff'];
-    $color = $colors[$type] ?? '#333';
-    $time = date('H:i:s');
-
-    // Формируем JSON для JS
-    $data = json_encode([
-        'time' => $time,
-        'msg' => $msg, // Чистый текст, HTML добавим в JS
-        'color' => $color
-    ], JSON_UNESCAPED_UNICODE);
-
-    echo "data: $data\n\n"; // Строгий формат SSE
-    flush();
-}
-
-// === ФУНКЦИЯ ОТПРАВКИ РЕЗУЛЬТАТА ===
-function sendResult($html)
-{
-    $data = json_encode(['html' => $html], JSON_UNESCAPED_UNICODE);
-    echo "event: result\n"; // Имя события
-    echo "data: $data\n\n";
-    flush();
-}
-
+// Get search query from GET request
 $queryTopic = trim($_GET['query'] ?? '');
-
-$selectedCountry = $_GET['country'] ?? 'ru';
+$selectedCountry = $_GET['country'] ?? 'de';
 $selectedPeriod = $_GET['period'] ?? '1d';
 $selectedLimit = (int)($_GET['limit'] ?? 5);
-$selectedOutputLang = $_GET['output_lang'] ?? 'ru';
+$selectedOutputLang = $_GET['output_lang'] ?? 'de';
 
-// Получаем конфиг выбранной страны
-$geoConfig = $countries[$selectedCountry] ?? $countries['ru'];
+// Get configuration for the selected country
+$geoConfig = $countries[$selectedCountry] ?? $countries['de'];
 
-// 1. АВТО-ПЕРЕВОД ЗАПРОСА
-// Берем язык из настроек страны (первые 2 буквы hl, например 'de' из 'de-DE')
+// 1. AUTO-TRANSLATE QUERY
+// Extract language code (first 2 chars of 'hl', e.g., 'de' from 'de-DE')
 $targetLang = substr($geoConfig['hl'], 0, 2);
 $countryName = $geoConfig['name'];
 
 $resultHtml = "";
-// $errorMsg = "";
 
 if (!empty($queryTopic)) {
 
-    logger("🚀 Старт обработки запроса: '$queryTopic'", 'system');
+    logger("🚀 Start processing query: '$queryTopic'", 'system');
 
-    // Спрашиваем Gemini правильный перевод
+    // Ask Gemini for the correct translation/adaptation of the query
     $searchQuery = translateQuery($queryTopic, $targetLang, $countryName, $GEMINI_API_KEY);
 
-    logger("🌍 Запрос переведен как: '$searchQuery', для региона $countryName", 'info');
+    logger("🌍 Query translated as: '$searchQuery', for region $countryName", 'info');
 
-    // 1. Ищем ссылки с новыми параметрами
+    // 2. SEARCH FOR LINKS
+    // Search for news links using the new parameters
     $links = getNewsLinks($searchQuery, $selectedPeriod, $geoConfig);
 
     $foundCount = count($links);
 
     if ($foundCount === 0) {
 
-        logger("❌ Ничего не найдено по запросу.", 'error');
+        logger("❌ Nothing found for the query.", 'error');
 
-        sendResult("<p>К сожалению, новостей по этому запросу не найдено.</p>");
+        sendResult("<p>Unfortunately, no news was found for this query.</p>");
 
         exit();
     }
 
     logger("✅ Найдено ссылок: $foundCount. Обрабатываем первые $selectedLimit...", 'info');
 
-    // 3. PYTHON (Скачивание)
+    // 3. PYTHON (DOWNLOADING)
     $fullContext = "";
     $processedCount = 0;
 
+    // Slice array to process only the selected limit
     $linksToProcess = array_slice($links, 0, $selectedLimit);
-
 
     foreach ($linksToProcess as $link) {
 
         $processedCount++;
-        logger("⏳ [$processedCount/$selectedLimit] Скачиваем статью: <a href='{$link}' target='_blank'> {$link}", 'info');
+        logger("⏳ [$processedCount/$selectedLimit] Downloading article: <a href='{$link}' target='_blank'> {$link}", 'info');
 
-        // exit();
-
-
+        // Protects a string before passing it to the command line (shell)
         $cmd = "python3 news_fetcher.py " . escapeshellarg($link);
         $output = shell_exec($cmd);
         $data = json_decode($output, true);
@@ -140,28 +105,27 @@ if (!empty($queryTopic)) {
 
         if ($data && isset($data['status']) && $data['status'] === 'success') {
 
-            // logger("📄 Ссылка: <a href='{$data['url']}' target='_blank'>{$data['url']}</a>", 'success');
+            logger("📄 Article successfully downloaded (" . mb_strlen($data['text']) . " chars). Link: <a href='{$data['url']}' target='_blank'>{$data['url']}</a>", 'success');
 
-
-            logger("📄 Статья успешно скачана (" . mb_strlen($data['text']) . " симв.) Ссылка на оригинальную статью: <a href='{$data['url']}' target='_blank'>{$data['url']}</a>", 'success');
-
-            $fullContext .= "\n\n=== СТАТЬЯ $processedCount: {$data['url']} ===\n";
+            // Append text to full context
+            $fullContext .= "\n\n=== ARTICLE $processedCount: {$data['url']} ===\n";
+            // Limit text length per article to 15000 chars to save tokens
             $fullContext .= mb_substr($data['text'], 0, 15000);
         } else {
-            logger("⚠️ Ошибка скачивания: " . ($data['error'] ?? 'Unknown error'), 'error');
+            // Log error if download failed
+            logger("⚠️ Download error: " . ($data['error'] ?? 'Unknown error'), 'error');
         }
     }
 
-
-    // 4. Анализ (Gemini)
+    // 4. ANALYSIS (GEMINI)
     if ($fullContext) {
 
-        logger("🧠 Отправляем данные в Gemini для анализа...", 'system');
+        logger("🧠 Sending data to Gemini for analysis...", 'system');
 
-        // Добавляем в промпт информацию о языке и стране, чтобы Gemini отвечал в контексте
-        $targetLangName = $outputLanguages[$selectedOutputLang]['name'] ?? 'Russian';
+        // Get target language name for the prompt
+        $targetLangName = $outputLanguages[$selectedOutputLang]['name'] ?? 'German';
 
-
+        // Construct the prompt using HEREDOC
         $prompt = <<<EOT
         You are a strict, automated intelligence briefing system.
         Your task is to analyze news articles and generate a structured report.
@@ -176,14 +140,15 @@ if (!empty($queryTopic)) {
         2.  **NO meta-descriptions.** Do not describe what you are doing. Just do it.
         3.  **Start IMMEDIATELY** with the main headline (Format: # Headline).
         4.  **Language:** The ENTIRE report must be in $targetLangName.
+        5.  **Localize Headers:** You MUST translate the section headers ("Key Takeaways", "In-Depth Analysis") into $targetLangName.
 
         Report Structure:
-        # 🌍 [Main Analytical Headline of the Event]
+        # 🌍 [Main Analytical Headline of the Event in $targetLangName]
 
-        ## ⚡ Key Takeaways
+        ## ⚡ [Translate "Key Takeaways" to $targetLangName]
         [Bullet points of the most important facts]
 
-        ## 🔍 In-Depth Analysis
+        ## 🔍 [Translate "In-Depth Analysis" to $targetLangName]
         [Detailed summary of the situation based on the articles]
 
         ---
@@ -191,26 +156,35 @@ if (!empty($queryTopic)) {
         $fullContext
         EOT;
 
-        // Очистка кодировки
+        // Clean up encoding just in case
         $prompt = mb_convert_encoding($prompt, 'UTF-8', 'UTF-8');
 
+        // Prepare API payload
         $apiData = [
             "contents" => [["parts" => [["text" => $prompt]]]]
         ];
 
-        // ЗАЩИТА JSON
+        // JSON PROTECTION
+        // Encode payload, ignoring invalid UTF-8 sequences
         $jsonPayload = json_encode($apiData, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_IGNORE);
 
+        // Check for JSON encoding errors
         if ($jsonPayload === false) {
-            $errorMsg = "Ошибка кодирования JSON: " . json_last_error_msg();
+            $errorMsg = "JSON encoding error: " . json_last_error_msg();
         } else {
 
+            // Initialize cURL session
             $ch = curl_init("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" . $GEMINI_API_KEY);
+            // Return response as string
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            // Set method to POST
             curl_setopt($ch, CURLOPT_POST, true);
+            // Set headers
             curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            // Set payload
             curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
 
+            // Execute request
             $response = curl_exec($ch);
 
             if (curl_errno($ch)) {
@@ -219,34 +193,49 @@ if (!empty($queryTopic)) {
 
             curl_close($ch);
 
+            // Decode API response
             $jsonResp = json_decode($response, true);
 
+            // Check if valid content exists
             if (isset($jsonResp['candidates'][0]['content']['parts'][0]['text'])) {
                 $md = htmlspecialchars($jsonResp['candidates'][0]['content']['parts'][0]['text']);
 
-                // парсинг Markdown
+                // MARKDOWN PARSING (Basic Regex)
+                // Convert bold text
                 $md = preg_replace('/\*\*(.*?)\*\*/', '<strong>$1</strong>', $md);
+                // Convert H1
                 $md = preg_replace('/^# (.*)$/m', '<h2>$1</h2>', $md);
+                // Convert H2
                 $md = preg_replace('/^## (.*)$/m', '<h3>$1</h3>', $md);
+                // Convert newlines to breaks
                 $resultHtml = nl2br($md);
 
-                logger("✨ Анализ завершен!", 'success');
-                // ОТПРАВЛЯЕМ ФИНАЛЬНЫЙ РЕЗУЛЬТАТ
+                logger("✨ Analysis complete!", 'success');
+
+                // SEND FINAL RESULT
                 sendResult($resultHtml);
             } elseif (isset($jsonResp['error'])) {
 
                 $err = $jsonResp['error']['message'] ?? 'Unknown';
 
-                logger("Ошибка API Gemini: $err", 'error');
+                // Log API error
+                logger("Gemini API Error: $err", 'error');
 
-                sendResult("<p style='color:red'>Ошибка API: $err</p>");
+                // Send error to user
+                sendResult("<p style='color:red'>API Error: $err</p>");
             } else {
-                logger("Пустой ответ API", 'error');
-                sendResult("<p>Получен пустой ответ от нейросети.</p>");
+
+                // Handle empty or unexpected response
+                logger("Empty response received", 'error');
+
+                sendResult("<p>Empty response received from the neural network.</p>");
             }
         }
     } else {
-        logger("Не удалось получить текст статей.", 'error');
-        sendResult("<p>Не удалось прочитать содержимое найденных статей.</p>");
+
+        // Handle case where context is empty
+        logger("Failed to retrieve article text.", 'error');
+
+        sendResult("<p>Failed to read content of found articles.</p>");
     }
 }
